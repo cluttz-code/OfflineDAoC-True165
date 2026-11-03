@@ -1,5 +1,4 @@
 using System.Diagnostics;
-using System.Net.NetworkInformation;
 using System.Text;
 
 namespace OfflineDaoc.Launcher;
@@ -113,8 +112,20 @@ internal static class Program
         throw new DirectoryNotFoundException("No runtime folder found. Run from inside it, or pass --root <runtime folder>.");
     }
 
-    private static bool ServerListening() =>
-        IPGlobalProperties.GetIPGlobalProperties().GetActiveTcpListeners().Any(endpoint => endpoint.Port == ServerPort);
+    /// <summary>Whether the server accepts connections on 127.0.0.1:10300 (a real connection attempt: the listener table
+    /// that IPGlobalProperties reads is not reliable on macOS).</summary>
+    private static bool ServerListening()
+    {
+        try
+        {
+            using var client = new System.Net.Sockets.TcpClient();
+            return client.ConnectAsync("127.0.0.1", ServerPort).Wait(500) && client.Connected;
+        }
+        catch (Exception)
+        {
+            return false;
+        }
+    }
 
     private static void RequireServerStopped()
     {
@@ -320,9 +331,17 @@ internal static class Program
         // As the Windows launcher: the game's saves inside its folder (Godot reads APPDATA on Windows only; on macOS its
         // user data is in ~/Library/Application Support/Godot/app_userdata).
         start.Environment["APPDATA"] = Path.Combine(folder, "save");
+        string logs = OperatingSystem.IsMacOS()
+            ? "~/Library/Application Support/Godot/app_userdata/MMOEngine/logs/godot.log"
+            : "~/.local/share/godot/app_userdata/MMOEngine/logs/godot.log";
         Console.WriteLine($"Starting the new client: {runner}");
+        Console.WriteLine($"(Its messages show here and in {logs}. Closing the game window ends this.)");
         using Process? process = Process.Start(start);
-        return process == null ? 1 : 0;
+        if (process == null)
+            return 1;
+        process.WaitForExit();
+        Console.WriteLine($"The client closed (exit code {process.ExitCode}).");
+        return process.ExitCode;
     }
 
     private static string FindClient(string root, string? given)
