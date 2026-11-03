@@ -325,9 +325,22 @@ internal static class Program
         {
             WorkingDirectory = folder,
             UseShellExecute = false,
-            ArgumentList = { "--path", Path.Combine(folder, "godot"), "--", "--server=127.0.0.1", $"--account={account}",
-                $"--password={password}", "--world-mode=1.65" },
         };
+        // On an Apple Silicon Mac this launcher may itself run under Rosetta (the x64 .NET, for SQLite), and macOS starts
+        // a child in its parent's architecture: Godot would then run as x86_64 and fail to load the Mac's arm64 .NET
+        // ("incompatible architecture ... need 'x86_64'"). Start it natively through arch -arm64 instead.
+        if (OperatingSystem.IsMacOS() && IsAppleSilicon())
+        {
+            start.FileName = "/usr/bin/arch";
+            start.ArgumentList.Add("-arm64");
+            start.ArgumentList.Add(runner);
+        }
+        foreach (string arg in new[] { "--path", Path.Combine(folder, "godot"), "--", "--server=127.0.0.1",
+                     $"--account={account}", $"--password={password}", "--world-mode=1.65" })
+            start.ArgumentList.Add(arg);
+        // Godot finds .NET itself; the x64 .NET this launcher runs on must not leak into it.
+        foreach (string name in new[] { "DOTNET", "DOTNET_ROOT", "DOTNET_ROOT_X64", "DOTNET_ROOT_ARM64" })
+            start.Environment.Remove(name);
         // As the Windows launcher: the game's saves inside its folder (Godot reads APPDATA on Windows only; on macOS its
         // user data is in ~/Library/Application Support/Godot/app_userdata).
         start.Environment["APPDATA"] = Path.Combine(folder, "save");
@@ -342,6 +355,24 @@ internal static class Program
         process.WaitForExit();
         Console.WriteLine($"The client closed (exit code {process.ExitCode}).");
         return process.ExitCode;
+    }
+
+    /// <summary>An Apple Silicon Mac, even when this process runs under Rosetta (hw.optional.arm64 is 1 there too).</summary>
+    private static bool IsAppleSilicon()
+    {
+        try
+        {
+            var info = new ProcessStartInfo("/usr/sbin/sysctl", "-n hw.optional.arm64")
+                { RedirectStandardOutput = true, UseShellExecute = false };
+            using Process? p = Process.Start(info);
+            string output = p?.StandardOutput.ReadToEnd().Trim() ?? "";
+            p?.WaitForExit();
+            return output == "1";
+        }
+        catch (Exception)
+        {
+            return false;
+        }
     }
 
     private static string FindClient(string root, string? given)
