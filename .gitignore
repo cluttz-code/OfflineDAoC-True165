@@ -77,3 +77,12 @@ source/new-client/godot/.godot/
 
 # Per-run AI timing report
 runtime/server/bot-ai-delay.json
+
+# macOS / Linux builds (tools/macos/setup-macos.sh): the server's apphost, Detour, the command-line launcher, links
+runtime/server/CoreServer
+runtime/server/navmesh
+runtime/cli/
+runtime/offlinedaoc
+runtime/new-client.txt
+development-source/build-macos/
+.DS_Store

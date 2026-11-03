@@ -62,6 +62,9 @@ The full walkthrough with troubleshooting is in [docs/PLAY.md](docs/PLAY.md), an
 [docs/NEW-CLIENT.md](docs/NEW-CLIENT.md). **Code > Download ZIP** on this page gives you the *source code*, not the
 playable game.
 
+**On a Mac?** There's no Mac download, but you can build it from this repository and run it with the Windows
+release's content. See [docs/MACOS.md](docs/MACOS.md).
+
 **Handy commands:** [QUICK COMMANDS.txt](QUICK%20COMMANDS.txt) has the everyday commands and the launcher
 shortcuts: hiring and managing companions, `/task`, `/questguide`, the Horn of Rallying, horse routes and training.
 Every command that works in True 1.65 is in [ALL SERVER COMMANDS.txt](ALL%20SERVER%20COMMANDS.txt), with the GM-only

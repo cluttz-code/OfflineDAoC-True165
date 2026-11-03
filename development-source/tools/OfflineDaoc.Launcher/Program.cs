@@ -47,7 +47,7 @@ internal static class Program
                 while (left > 0)
                 {
                     int batch = left >= 100 ? 100 : left >= 10 ? 10 : 1;
-                    MainForm.GenerateBotCharacters(mode.DatabasePath, is165, realm, batch, level);
+                    BotRoster.GenerateBotCharacters(mode.DatabasePath, is165, realm, batch, level);
                     left -= batch;
                 }
                 File.AppendAllText(log, $"{DateTime.Now:s} added {count} level-{level} bots, realm {realm}, {(is165 ? "1.65" : "normal")}\r\n");

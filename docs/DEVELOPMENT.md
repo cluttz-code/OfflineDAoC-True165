@@ -76,6 +76,9 @@ dotnet build OfflineDaoc.Launcher.csproj -c Release
   `RealmEventRecordStore.cs`, `BotAiDelayReport.cs`). The path is `../../server/GameServer/...`,
   which works as cloned because the repo mirrors the dev layout.
 - The version shown in the window title is `MainForm.DisplayVersion` ("0.1").
+- The ADD BOTS work (`BotRoster.cs`), `TrueMode.cs` and `BotCharacterGenerator.cs` have no UI code. The cross-platform
+  terminal launcher `development-source/tools/OfflineDaoc.Cli` (`net10.0`) compiles them too. Keep them free of WinForms.
+  macOS: see [MACOS.md](MACOS.md).
 
 ---
 
