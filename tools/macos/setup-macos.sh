@@ -124,6 +124,9 @@ fi
 
 # ---- 5. content from the release download ---------------------------------------------------------------------------
 if [ -n "$RELEASE" ]; then
+    [ -d "$RELEASE" ] || die "The release folder '$RELEASE' does not exist. Pass the folder where you unzipped the
+Windows release download (it holds runtime/ and new-client/). Tip: type --release and a space, then drag that folder
+from Finder into the Terminal window to paste its path."
     RELEASE="$(cd "$RELEASE" && pwd)"
     say "Linking content from the release at $RELEASE"
     NAV="$RELEASE/runtime/server/navmesh"
