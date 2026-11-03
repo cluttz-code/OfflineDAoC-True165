@@ -10,8 +10,9 @@
 #   4. the clean world database        -> runtime/data/opendaoc-165.sqlite3.db (only when there is none yet)
 # With --release it also links the release download's platform-independent content into this tree: the full navigation
 # meshes (runtime/server/navmesh) and the new client (runtime/new-client.txt points at its new-client folder).
-# --x64 builds and runs with the x64 .NET under Rosetta (DOTNET=/usr/local/share/dotnet/x64/dotnet), for when the SQLite
-# library has no Apple Silicon build (the script says so if that happens).
+# On Apple Silicon the SQLite package has no arm64 macOS library, so the server and the launcher run on an x64 .NET runtime
+# under Rosetta. The script downloads that runtime to ~/.dotnet-x64 (or uses DOTNET_X64 / /usr/local/share/dotnet/x64)
+# and installs Rosetta if needed. Everything is still built with your own .NET SDK. --x64 forces this on any Mac.
 #
 # Needs: Xcode command line tools (xcode-select --install), cmake, python3, and the .NET 10 SDK.
 # It never starts the server and never replaces an existing world database.
@@ -35,13 +36,8 @@ say() { printf '\n==> %s\n' "$*"; }
 die() { printf '\nERROR: %s\n' "$*" >&2; exit 1; }
 
 # ---- tools ----------------------------------------------------------------------------------------------------------
-if [ "$X64" = 1 ]; then
-    DOTNET="${DOTNET:-/usr/local/share/dotnet/x64/dotnet}"
-    [ -x "$DOTNET" ] || die "--x64 needs the x64 .NET 10 SDK at $DOTNET (install the macOS x64 SDK; Rosetta runs it)."
-    arch -x86_64 /usr/bin/true 2>/dev/null || die "Rosetta is not installed: softwareupdate --install-rosetta"
-else
-    DOTNET="${DOTNET:-$(command -v dotnet || true)}"
-fi
+# DOTNET builds; RUN_DOTNET runs the server and the launcher (the x64 one under Rosetta when SQLite needs it).
+DOTNET="${DOTNET:-$(command -v dotnet || true)}"
 [ -n "$DOTNET" ] && [ -x "$DOTNET" ] || die "dotnet not found. Install the .NET 10 SDK: https://dotnet.microsoft.com/download/dotnet/10.0"
 "$DOTNET" --list-sdks | grep -q '^10\.' || die "The .NET 10 SDK is needed ($DOTNET --list-sdks shows none)."
 command -v cmake >/dev/null || die "cmake not found (brew install cmake)."
@@ -72,16 +68,36 @@ say "Building the server (Release; takes a minute, only errors are shown)"
 say "Copying the server build into runtime/server (config/ kept)"
 rsync -a --exclude 'config/' "$SERVER_SRC/Release/" "$RUNTIME/server/"
 
-ARCH="$(uname -m)"
-if [ "$ARCH" = arm64 ] && [ "$X64" = 0 ]; then
-    if ! find "$RUNTIME/server/runtimes" -path '*osx-arm64*' -name 'SQLite.Interop*' 2>/dev/null | grep -q .; then
-        cat >&2 <<EOF
-
-WARNING: the SQLite package in this build has no Apple Silicon (osx-arm64) native library, so the server and the
-command-line launcher cannot open the world database natively. Install the x64 .NET 10 SDK (it goes to
-/usr/local/share/dotnet/x64) and Rosetta (softwareupdate --install-rosetta), then run this script again with --x64.
-EOF
+RUN_DOTNET="$DOTNET"
+if [ "$(uname -m)" = arm64 ] && \
+   ! find "$RUNTIME/server/runtimes" -path '*osx-arm64*' -name 'SQLite.Interop*' 2>/dev/null | grep -q .; then
+    X64=1
+fi
+if [ "$X64" = 1 ]; then
+    say "Preparing the x64 .NET runtime (SQLite has no Apple Silicon library, so the server runs under Rosetta)"
+    if ! arch -x86_64 /usr/bin/true 2>/dev/null; then
+        echo "    Installing Rosetta (macOS may ask for your password)..."
+        softwareupdate --install-rosetta --agree-to-license || \
+            die "Rosetta could not be installed. Run: softwareupdate --install-rosetta --agree-to-license"
     fi
+    RUN_DOTNET=""
+    for candidate in "${DOTNET_X64:-}" /usr/local/share/dotnet/x64/dotnet "$HOME/.dotnet-x64/dotnet"; do
+        if [ -n "$candidate" ] && [ -x "$candidate" ] && \
+           "$candidate" --list-runtimes 2>/dev/null | grep -q '^Microsoft.AspNetCore.App 10\.'; then
+            RUN_DOTNET="$candidate"; break
+        fi
+    done
+    if [ -z "$RUN_DOTNET" ]; then
+        echo "    Downloading the x64 .NET 10 runtime to ~/.dotnet-x64 (about 100 MB)..."
+        INSTALLER="$BUILD/dotnet-install.sh"
+        curl -fsSL https://dot.net/v1/dotnet-install.sh -o "$INSTALLER" || die "Could not download dotnet-install.sh."
+        for rt in dotnet aspnetcore; do
+            bash "$INSTALLER" --channel 10.0 --runtime "$rt" --architecture x64 --install-dir "$HOME/.dotnet-x64" \
+                --no-path >/dev/null || die "Could not install the x64 .NET runtime ($rt)."
+        done
+        RUN_DOTNET="$HOME/.dotnet-x64/dotnet"
+    fi
+    echo "    -> $RUN_DOTNET"
 fi
 
 # ---- 3. the command-line launcher -----------------------------------------------------------------------------------
@@ -91,7 +107,7 @@ say "Building the command-line launcher"
 cat > "$RUNTIME/offlinedaoc" <<EOF
 #!/bin/bash
 # OfflineDAoC True 1.65 command-line launcher (made by tools/macos/setup-macos.sh). offlinedaoc --help
-export DOTNET="\${DOTNET:-$DOTNET}"
+export DOTNET="\${DOTNET:-$RUN_DOTNET}"
 cd "\$(dirname "\$0")"
 exec "\$DOTNET" "\$(pwd)/cli/offlinedaoc.dll" "\$@"
 EOF

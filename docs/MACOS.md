@@ -54,15 +54,11 @@ The script:
 
 At the end it lists anything that's still missing. It never starts the server and never replaces a world database.
 
-**Apple Silicon and SQLite.** The server reads the world through `System.Data.SQLite`. If that package has no native
-arm64 macOS library, the script warns you. To fix it, run the server as x64 under Rosetta:
-
-```bash
-softwareupdate --install-rosetta
-```
-
-Then install the **x64** .NET 10 SDK for macOS (it goes to `/usr/local/share/dotnet/x64`) and run the script again
-with `--x64`.
+**Apple Silicon and SQLite.** The server reads the world through `System.Data.SQLite`, which has no native library
+for Apple Silicon Macs. On those Macs the script runs the server and the launcher on an x64 .NET runtime under Rosetta.
+It installs Rosetta if it's missing (macOS may ask for your password) and downloads the x64 .NET 10 runtime into
+`~/.dotnet-x64`. Your own .NET SDK still does all the building. The game runs a little slower under Rosetta, but it
+runs. `--x64` forces this on any Mac.
 
 ## Playing
 

@@ -1,6 +1,6 @@
 <Project Sdk="Microsoft.NET.Sdk">
-  <!-- The cross-platform command-line launcher (macOS and Linux): the Windows launcher's START SERVER, --refresh-165,
-       --add-bots and ENTER REALM steps without its window. It shares TrueMode, BotCharacterGenerator and BotRoster with
+  <!-- The cross-platform command-line launcher (macOS and Linux): the Windows launcher's START SERVER, content refresh,
+       ADD BOTS and ENTER REALM steps without its window. It shares TrueMode, BotCharacterGenerator and BotRoster with
        OfflineDaoc.Launcher, so both write the world exactly the same way. -->
   <PropertyGroup>
     <OutputType>Exe</OutputType>
