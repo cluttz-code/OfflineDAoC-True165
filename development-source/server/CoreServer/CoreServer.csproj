@@ -47,7 +47,8 @@
         <PackageReference Include="Microsoft.AspNetCore.SpaServices.Extensions" Version="10.0.3" />
         <PackageReference Include="System.ServiceProcess.ServiceController" Version="10.0.3" />
         <ProjectReference Include="..\GameServer\GameServer.csproj" Name="GameServer" />
-        <Content Include=".\config\serverconfig.xml">
+        <!-- A developer's local config; not in the repository (the game's is runtime/server/config), so optional. -->
+        <Content Include=".\config\serverconfig.xml" Condition="Exists('config\serverconfig.xml')">
             <CopyToOutputDirectory>Always</CopyToOutputDirectory>
         </Content>
         <Content Include="config\serverconfig.example.xml" />

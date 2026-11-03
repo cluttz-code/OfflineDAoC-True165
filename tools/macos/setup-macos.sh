@@ -67,8 +67,8 @@ cp -f "$DYLIB" "$RUNTIME/server/lib/Detour.dylib"
 echo "    -> runtime/server/lib/Detour.dylib"
 
 # ---- 2. the server --------------------------------------------------------------------------------------------------
-say "Building the server (Release)"
-"$DOTNET" build "$SERVER_SRC/CoreServer/CoreServer.csproj" -c Release
+say "Building the server (Release; takes a minute, only errors are shown)"
+"$DOTNET" build "$SERVER_SRC/CoreServer/CoreServer.csproj" -c Release -v quiet -nologo -clp:ErrorsOnly
 say "Copying the server build into runtime/server (config/ kept)"
 rsync -a --exclude 'config/' "$SERVER_SRC/Release/" "$RUNTIME/server/"
 
@@ -87,7 +87,7 @@ fi
 # ---- 3. the command-line launcher -----------------------------------------------------------------------------------
 say "Building the command-line launcher"
 "$DOTNET" publish "$REPO/development-source/tools/OfflineDaoc.Cli/OfflineDaoc.Cli.csproj" -c Release \
-    -o "$RUNTIME/cli" -p:UseAppHost=false
+    -o "$RUNTIME/cli" -p:UseAppHost=false -v quiet -nologo -clp:ErrorsOnly
 cat > "$RUNTIME/offlinedaoc" <<EOF
 #!/bin/bash
 # OfflineDAoC True 1.65 command-line launcher (made by tools/macos/setup-macos.sh). offlinedaoc --help
