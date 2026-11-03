@@ -33,6 +33,8 @@ the Windows launcher does. It has no population dashboard, bot list or settings 
 
 ## Setup
 
+**1. Get this repository:**
+
 ```bash
 git clone https://github.com/cluttz-code/OfflineDAoC-True165.git
 ```
@@ -41,8 +43,19 @@ git clone https://github.com/cluttz-code/OfflineDAoC-True165.git
 cd OfflineDAoC-True165
 ```
 
+**2. Download the release's content.** The release's own downloader is a Windows program, so use the Mac one in this
+repository. It fetches the same 25 verified parts from the
+[release page](https://github.com/shadowofze/OfflineDAoC-True165/releases/latest): 36 GB to download, 43 GB once
+installed. If it stops, run it again and it continues where it left off.
+
 ```bash
-tools/macos/setup-macos.sh --release "/path/to/unpacked/OfflineDAoC True 1.65"
+python3 tools/macos/download-release.py ~/OfflineDAoC-True165-release
+```
+
+**3. Build and link everything:**
+
+```bash
+tools/macos/setup-macos.sh --release ~/OfflineDAoC-True165-release
 ```
 
 The script:
